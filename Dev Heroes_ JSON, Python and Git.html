@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dev Heroes: JSON, Python and Git</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e9ecff;--ink:#14142b;--mute:#4d4d73;--card:#fff;--line:#14142b;--track:#d6d9f5;--c:#a5a8ff;--t:#14142b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12122a;--ink:#f1f1ff;--mute:#a9a9d0;--card:#1d1d3b;--line:#5a5aa0;--track:#2b2b55}}
+:root[data-theme="dark"]{--bg:#12122a;--ink:#f1f1ff;--mute:#a9a9d0;--card:#1d1d3b;--line:#5a5aa0;--track:#2b2b55}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:600 16px/1.55 Nunito,system-ui,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:24px 16px 48px}
+h1{font:400 clamp(22px,5.5vw,40px)/1.3 'Press Start 2P','Courier New',monospace;margin:8px 0 12px}
+.lead{max-width:60ch;color:var(--mute);margin:0 0 28px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:22px}
+.card{background:var(--card);border:3px solid var(--line);border-radius:16px;box-shadow:6px 6px 0 var(--c);padding:16px;display:flex;flex-direction:column;gap:10px}
+.card canvas{width:120px;height:100px;align-self:center}
+.card h2{margin:0;font-size:26px;font-weight:800;line-height:1.1}
+.card p{margin:0}
+.role{color:var(--mute);font-weight:800}
+.bar{height:10px;background:var(--track);border-radius:5px;overflow:hidden;margin-top:2px}
+.bar i{display:block;height:100%;background:var(--c)}
+button{font:800 16px Nunito,system-ui,sans-serif;border:3px solid var(--line);border-radius:12px;padding:10px 14px;cursor:pointer;background:var(--c);color:var(--t)}
+button:disabled{opacity:.55;cursor:default}
+button:focus-visible,#c:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+.card button{margin-top:auto}.card button+button{margin-top:0;background:transparent;color:var(--ink)}
+#stage{margin-top:40px}
+.screen{border:3px solid var(--line);border-radius:16px;overflow:hidden;background:#0e1020;box-shadow:6px 6px 0 var(--line)}
+#c{display:block;width:100%;height:auto;aspect-ratio:8/5;touch-action:none}
+.row{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-top:20px}
+.hint{color:var(--mute);margin:0;flex:1;min-width:220px}
+footer{margin-top:36px;color:var(--mute);max-width:60ch}
+</style>
+</head>
+<body>
+<main>
+<h1>Dev Heroes</h1>
+<p class="lead">JSON, Python and Git are not people, but today they are playable. Pick one, collect data, and squash the bugs before they catch you.</p>
+<div class="grid" id="grid"></div>
+<section id="stage">
+<div class="screen"><canvas id="c" width="640" height="400" tabindex="0" aria-label="Game arena"></canvas></div>
+<div class="row"><button id="ab" disabled>Pick a hero first</button><button id="ab2" disabled>Pick a hero first</button><button id="mu" aria-label="Toggle sound">🔊</button><p class="hint">Move with WASD or the arrow keys, or press and drag on the arena. Guns auto-aim and fire at the nearest bug. Abilities: Space and Q. Dialogue: Enter or tap.</p></div>
+</section>
+<footer>JSON, Python and Git walk into a repo. JSON brings the data, Python writes the script, and Git remembers who broke it.</footer>
+</main>
+<script>
+const WW=1280,WH=800,W=640,HT=400;
+const H={
+json:{n:'JSON',role:'The Courier',c:'#fbbf24',t:'#14142b',spd:190,lives:3,cd:[6,12],an:['Parse()','stringify()'],w:'debugger',
+ bio:'JavaScript Object Notation. Douglas Crockford popularized it in the early 2000s, and it now carries data between almost every app and API.',
+ sk:'Parse() pulls data to you. stringify() freezes every bug for 3 seconds.'},
+python:{n:'Python',role:'The Charmer',c:'#3776ab',t:'#fff',spd:225,lives:3,cd:[4,10],an:['import antigravity','[shoot() for a in ring]'],w:'linter',
+ bio:'Created by Guido van Rossum in 1991 and named after Monty Python. Readable, friendly, and everywhere.',
+ sk:'antigravity is a bug-squashing dash. The list comprehension fires a ring of 16 bullets.'},
+git:{n:'Git',role:'The Time Traveler',c:'#f05133',t:'#14142b',spd:170,lives:4,cd:[12,14],an:['git revert','git stash'],w:'merge',
+ bio:'Written by Linus Torvalds in 2005. The name is a joke: git is British slang for a fool, and he named it after himself.',
+ sk:'revert undoes every bug on screen. stash gives a 4 second shield. Starts with an extra life.'}};
+const WP={debugger:{n:'Debugger pistol',r:.38,k:1,sp:0,v:430,col:'#fbbf24'},linter:{n:'Linter SMG',r:.14,k:1,sp:0,v:480,col:'#6cc3ff'},merge:{n:'Merge shotgun',r:.75,k:5,sp:.22,v:380,col:'#ff8a5c'},rebase:{n:'Rebase railgun',r:1,k:1,sp:0,v:700,d:3,pi:4,col:'#c792ff'}};
+const B={bug:{e:'🐛',hp:1,v:1,r:11,s:22},fast:{e:'🦟',hp:1,v:1.9,r:9,s:20},tank:{e:'🪲',hp:5,v:.65,r:16,s:34},boss:{e:'🕷️',hp:80,v:.55,r:36,s:78}};
+const CH=[
+{n:'Data Center',ty:'bits',need:12,th:['#0e1020','#2b3a67','rgba(140,150,255,.1)'],
+ wl:[[240,160,40,200],[240,440,40,200],[560,330,160,40],[1000,160,40,200],[1000,440,40,200],[760,120,200,30],[320,650,200,30]],
+ intro:[['git','Production is down. Someone pushed on a Friday again.'],['json','The payloads are swarming with bugs. I can smell malformed data.'],['python','Then I will script the cleanup. Grab twelve data bits and I will cover you.']],
+ win:[['json','Payload recovered. Everything parses, for once.'],['git','Good. The build pipeline is next.']]},
+{n:'Build Pipeline',ty:'time',need:40,th:['#101a14','#2f5d44','rgba(120,255,170,.09)'],
+ wl:[[200,300,300,30],[780,300,300,30],[200,470,300,30],[780,470,300,30],[620,120,40,200],[620,480,40,200]],
+ intro:[['python','The pipeline is running and the bugs know it. Hold out for forty seconds.'],['git','Grab the gift crates. They carry spare guns.']],
+ win:[['python','Build green. That was close.'],['json','Wait. Something huge is moving in the repo core.']]},
+{n:'Repo Core',ty:'boss',need:1,th:['#1c0e16','#6a2a4a','rgba(255,130,170,.09)'],
+ wl:[[300,200,60,60],[920,200,60,60],[300,540,60,60],[920,540,60,60],[610,370,60,60]],
+ intro:[['git','That is the Merge Conflict. Two histories, one very angry spider.'],['json','Shoot it, dodge it, and do not let its minions corner you.']],
+ win:[['git','Conflict resolved. History stays clean.'],['python','And nobody had to read the log.'],['json','Deploying to main. Thanks for playing!']]}];
+const SF={shoot:[520,.07,'square',-300],pick:[760,.08,'sine',500],hit:[220,.09,'sawtooth',-120],pop:[330,.14,'triangle',-200],hurt:[160,.3,'sawtooth',-110],ab:[300,.3,'triangle',600],win:[520,.5,'square',500],crate:[600,.2,'square',400]};
+const $=s=>document.querySelector(s),cv=$('#c'),g=cv.getContext('2d'),ab=[$('#ab'),$('#ab2')];
+const R=(a,b)=>a+Math.random()*(b-a),cl=(v,a,b)=>Math.max(a,Math.min(b,v)),D=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const best=k=>{try{return+localStorage.getItem('dh-'+k)||0}catch(e){return 0}};
+const keep=(k,s)=>{try{localStorage.setItem('dh-'+k,s)}catch(e){}};
+const G=['0','1','{','}','"',':','[',']'];
+let S=null,mode='idle',keys={},ptr=null,last=0,pv=[],AC=null,mute=0,WL=[];
+$('#grid').innerHTML=Object.keys(H).map(k=>{const h=H[k];return `<article class="card" style="--c:${h.c};--t:${h.t}"><canvas width="240" height="200" data-k="${k}"></canvas><h2>${h.n}</h2><p class="role">${h.role}</p><p>${h.bio}</p><p>Gun: ${WP[h.w].n}. ${h.sk}</p><div>Speed<div class="bar"><i style="width:${Math.round(h.spd/2.3)}%"></i></div></div><div>Lives ${'♥'.repeat(h.lives)}</div><button data-k="${k}" data-m="1">Story mode</button><button data-k="${k}" data-m="0">Arcade</button><span>Best arcade score: <b id="b-${k}">${best(k)}</b></span></article>`}).join('');
+document.querySelectorAll('.card canvas').forEach(c=>pv.push([c.getContext('2d'),c.dataset.k]));
+document.querySelectorAll('.card button').forEach(b=>b.onclick=()=>{b.blur();start(b.dataset.k,+b.dataset.m);cv.scrollIntoView({behavior:'smooth',block:'center'})});
+function sfx(k){if(mute||!AC)return;const[f,d,ty,sl]=SF[k],o=AC.createOscillator(),v=AC.createGain(),t=AC.currentTime;o.type=ty;o.frequency.setValueAtTime(f,t);o.frequency.linearRampToValueAtTime(Math.max(40,f+sl),t+d);v.gain.setValueAtTime(.06,t);v.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(v);v.connect(AC.destination);o.start(t);o.stop(t+d)}
+$('#mu').onclick=e=>{mute^=1;e.currentTarget.textContent=mute?'🔇':'🔊'};
+function hero(c,k,x,y,r,t){
+ c.save();c.translate(x,y+Math.sin(t*4)*r*.07);c.fillStyle=H[k].c;c.beginPath();
+ if(k=='json')c.roundRect(-r,-r,2*r,2*r,r*.4);
+ else if(k=='python')c.arc(0,0,r,0,7);
+ else{c.rotate(Math.PI/4);c.roundRect(-r*.78,-r*.78,r*1.56,r*1.56,r*.2)}
+ c.fill();if(k=='git')c.rotate(-Math.PI/4);
+ if(k=='python'){c.fillStyle='#ffd43b';c.beginPath();c.arc(0,0,r,.15,Math.PI-.15);c.closePath();c.fill()}
+ for(const s of[-1,1]){c.fillStyle='#fff';c.beginPath();c.arc(s*r*.32,-r*.22,r*.2,0,7);c.fill();c.fillStyle='#14142b';c.beginPath();c.arc(s*r*.32+r*.04,-r*.2,r*.1,0,7);c.fill()}
+ c.lineCap='round';c.lineWidth=Math.max(2,r*.1);
+ if(k=='json'){c.fillStyle='#14142b';c.font=`800 ${r*.7}px Nunito,sans-serif`;c.textAlign='center';c.textBaseline='middle';c.fillText('{ }',0,r*.5)}
+ if(k=='python'){c.strokeStyle='#e5383b';c.beginPath();c.moveTo(0,r*.3);c.lineTo(0,r*.62);c.lineTo(-r*.12,r*.78);c.moveTo(0,r*.62);c.lineTo(r*.12,r*.78);c.stroke()}
+ if(k=='git'){c.strokeStyle=c.fillStyle='#fff';c.beginPath();c.moveTo(0,r*.12);c.lineTo(0,r*.55);c.moveTo(0,r*.4);c.lineTo(r*.28,r*.22);c.stroke();for(const[a,b]of[[0,.12],[0,.55],[.28,.22]]){c.beginPath();c.arc(a*r,b*r,r*.08,0,7);c.fill()}}
+ c.restore()}
+function T(s,x,y,col,sz,al){g.fillStyle=col;g.font=`800 ${sz}px Nunito,sans-serif`;g.textAlign=al||'center';g.textBaseline='middle';g.fillText(s,x,y)}
+function wrap(s,w){const o=[];let l='';for(const x of s.split(' ')){if(g.measureText(l+x).width>w){o.push(l);l=''}l+=x+' '}o.push(l);return o}
+function rp(){let p;do p={x:R(40,WW-40),y:R(60,WH-40)};while(WL.some(w=>p.x>w[0]-24&&p.x<w[0]+w[2]+24&&p.y>w[1]-24&&p.y<w[1]+w[3]+24));return p}
+function wall(o,r){for(const w of WL){const x=cl(o.x,w[0],w[0]+w[2]),y=cl(o.y,w[1],w[1]+w[3]),a=o.x-x,b=o.y-y,l=Math.hypot(a,b);if(l<r){if(l>.01){o.x+=a/l*(r-l);o.y+=b/l*(r-l)}else o.x+=r}}}
+function pop(x,y){for(let i=0;i<6;i++)S.pt.push({x,y,vx:R(-130,130),vy:R(-130,130),l:.4})}
+function shot(a,w){S.bul.push({x:S.x,y:S.y,vx:Math.cos(a)*w.v,vy:Math.sin(a)*w.v,l:.9,d:w.d||1,p:w.pi||0,c:w.col})}
+function start(k,st){try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();AC.resume()}catch(e){}
+ const h=H[k];S={k,h,st,ch:st?0:Math.floor(R(0,3)),lives:h.lives,score:0};
+ ab.forEach(b=>{b.disabled=false;b.style.setProperty('--c',h.c);b.style.setProperty('--t',h.t)});enter()}
+function enter(){load();if(S.st)talk(CH[S.ch].intro,()=>{mode='play'});else mode='play'}
+function load(){WL=CH[S.ch].wl;Object.assign(S,{x:120,y:400,t:0,got:0,bd:0,inv:0,mag:0,dash:0,fr:0,sh:0,wt:0,w:'',fc:0,sb:1,sc:8,aim:0,cx:0,cy:200,dx:1,dy:0,cd:[0,0],bugs:[],bits:[],bul:[],cr:[],fx:[],pt:[]});
+ if(S.st&&CH[S.ch].ty=='boss')S.bugs.push({t:'boss',x:1100,y:400,hp:B.boss.hp,k:0})}
+function talk(l,cb){S.tk={l,i:0,cb};mode='talk'}
+function act(){if(mode=='talk'){const q=S.tk;if(++q.i>=q.l.length){S.tk=null;q.cb()}}else if(mode=='over'){S.lives=S.h.lives;if(!S.st)S.score=0;load();mode='play'}else if(mode=='end')start(S.k,1)}
+function fin(){sfx('win');S.lives=Math.min(S.h.lives,S.lives+1);talk(CH[S.ch].win,()=>{if(S.ch+1<CH.length){S.ch++;enter()}else mode='end'})}
+function use(i){if(mode!='play'||S.cd[i]>0)return;S.cd[i]=S.h.cd[i];S.fx.push({x:S.x,y:S.y,r:0,l:.5});sfx('ab');const k=S.k;
+ if(i==0){if(k=='json')S.mag=1.6;else if(k=='python')S.dash=.45;else for(const b of S.bugs)b.hp-=b.t=='boss'?10:99}
+ else if(k=='json')S.fr=3;else if(k=='python')for(let j=0;j<16;j++)shot(j*Math.PI/8,WP.linter);else S.sh=4}
+function upd(d){
+ S.t+=d;for(const f of['inv','mag','dash','fr','sh','wt','fc'])S[f]=Math.max(0,S[f]-d);S.cd=S.cd.map(v=>Math.max(0,v-d));
+ let mx=(keys.d||keys.ArrowRight?1:0)-(keys.a||keys.ArrowLeft?1:0),my=(keys.s||keys.ArrowDown?1:0)-(keys.w||keys.ArrowUp?1:0);
+ if(ptr){const a=ptr.x+S.cx-S.x,b=ptr.y+S.cy-S.y,l=Math.hypot(a,b);if(l>8){mx=a/l;my=b/l}}
+ const m=Math.hypot(mx,my);if(m){mx/=m;my/=m;S.dx=mx;S.dy=my}
+ const ds=S.dash>0,v=S.h.spd*(ds?2.6:1);
+ S.x=cl(S.x+(ds?S.dx:mx)*v*d,14,WW-14);S.y=cl(S.y+(ds?S.dy:my)*v*d,14,WH-14);wall(S,14);
+ S.cx=cl(S.x-W/2,0,WW-W);S.cy=cl(S.y-HT/2,0,WH-HT);
+ const wp=WP[S.wt>0?S.w:S.h.w];let n=null,nd=340;for(const b of S.bugs){const l=D(S,b);if(l<nd){nd=l;n=b}}
+ if(n){S.aim=Math.atan2(n.y-S.y,n.x-S.x);if(S.fc<=0){S.fc=wp.r;for(let i=0;i<wp.k;i++)shot(S.aim+(i-(wp.k-1)/2)*wp.sp+R(-.03,.03),wp);sfx('shoot')}}
+ S.bul=S.bul.filter(b=>{b.x+=b.vx*d;b.y+=b.vy*d;b.l-=d;if(b.l<=0||WL.some(w=>b.x>w[0]&&b.x<w[0]+w[2]&&b.y>w[1]&&b.y<w[1]+w[3]))return false;
+  for(const e of S.bugs)if(e.hit!=b&&D(b,e)<B[e.t].r+4){e.hp-=b.d;e.hit=b;sfx('hit');if(b.p--<=0)return false}return true});
+ while(S.bits.length<6){const p=rp();p.g=G[Math.floor(R(0,G.length))];S.bits.push(p)}
+ const pr=S.k=='json'?28:22;
+ S.bits=S.bits.filter(b=>{const l=D(S,b);if(S.mag>0&&l<260&&l>1){b.x+=(S.x-b.x)/l*440*d;b.y+=(S.y-b.y)/l*440*d}if(l<pr){S.score++;S.got++;sfx('pick');return false}return true});
+ S.sc-=d;if(S.sc<=0&&!S.cr.length){S.sc=14;S.cr.push(rp())}
+ S.cr=S.cr.filter(c=>{if(D(S,c)<26){const o=Object.keys(WP).filter(k=>k!=S.h.w);S.w=o[Math.floor(R(0,o.length))];S.wt=15;sfx('crate');return false}return true});
+ const te=S.t+(S.st?S.ch*15:0);S.sb-=d;
+ if(S.sb<=0){S.sb=Math.max(.5,1.4-te*.02);let p,n2=0;do p=rp();while(D(S,p)<340&&n2++<30);const r=Math.random(),t=te>25&&r<.2?'tank':te>10&&r<.45?'fast':'bug';S.bugs.push({t,x:p.x,y:p.y,hp:B[t].hp})}
+ const bo=S.bugs.find(b=>b.t=='boss');if(bo&&(bo.k-=d)<=0){bo.k=3;S.bugs.push({t:'fast',x:bo.x,y:bo.y,hp:1})}
+ const sp=50+Math.min(te*1.5,70);
+ S.bugs=S.bugs.filter(b=>{const q=B[b.t];
+  if(b.hp<=0){S.score+=b.t=='boss'?20:1;if(b.t=='boss')S.bd=1;pop(b.x,b.y);sfx('pop');return false}
+  const a=S.x-b.x,c=S.y-b.y,l=Math.hypot(a,c)||1;
+  if(S.fr<=0){b.x+=a/l*sp*q.v*d;b.y+=c/l*sp*q.v*d;wall(b,q.r*.7)}
+  if(l<q.r+12){if(ds&&b.t!='boss')b.hp-=3;else if(S.inv<=0&&S.sh<=0){S.lives--;S.inv=1.3;sfx('hurt');if(b.t!='boss')b.hp=0}}
+  return true});
+ S.fx=S.fx.filter(f=>(f.r+=500*d,f.l-=d)>0);S.pt=S.pt.filter(p=>(p.x+=p.vx*d,p.y+=p.vy*d,p.l-=d)>0);
+ if(S.lives<=0){mode='over';if(!S.st&&S.score>best(S.k)){keep(S.k,S.score);$('#b-'+S.k).textContent=S.score}return}
+ const c=CH[S.ch];if(S.st&&(c.ty=='bits'?S.got>=c.need:c.ty=='time'?S.t>=c.need:S.bd))fin()}
+function draw(t){
+ const th=CH[S?S.ch:0].th;g.fillStyle=th[0];g.fillRect(0,0,W,HT);
+ if(!S){T('Pick a hero above to start',W/2,HT/2,'#c9ccff',22);return}
+ g.save();g.translate(-S.cx,-S.cy);g.strokeStyle=th[2];g.lineWidth=1;g.beginPath();
+ for(let i=0;i<=WW;i+=40){g.moveTo(i,0);g.lineTo(i,WH)}for(let j=0;j<=WH;j+=40){g.moveTo(0,j);g.lineTo(WW,j)}g.stroke();
+ for(const w of WL){g.fillStyle=th[1];g.fillRect(w[0],w[1],w[2],w[3]);g.strokeStyle='rgba(255,255,255,.3)';g.strokeRect(w[0],w[1],w[2],w[3])}
+ for(const b of S.bits)T(b.g,b.x,b.y,'#7ee787',20);
+ for(const c of S.cr)T('🎁',c.x,c.y,'#fff',26);
+ for(const b of S.bugs){const q=B[b.t];T(q.e,b.x,b.y,'#fff',q.s)}
+ for(const b of S.bul){g.fillStyle=b.c;g.beginPath();g.arc(b.x,b.y,4,0,7);g.fill()}
+ for(const p of S.pt){g.fillStyle='#ffd43b';g.fillRect(p.x,p.y,4,4)}
+ for(const f of S.fx){g.strokeStyle=S.h.c;g.globalAlpha=Math.max(0,f.l*2);g.lineWidth=4;g.beginPath();g.arc(f.x,f.y,f.r,0,7);g.stroke();g.globalAlpha=1}
+ const wp=WP[S.wt>0?S.w:S.h.w];g.strokeStyle=wp.col;g.lineWidth=6;g.lineCap='round';g.beginPath();g.moveTo(S.x,S.y);g.lineTo(S.x+Math.cos(S.aim)*26,S.y+Math.sin(S.aim)*26);g.stroke();
+ if(!(S.inv>0&&Math.floor(t*14)%2)){g.globalAlpha=S.dash>0?.6:1;hero(g,S.k,S.x,S.y,16,t);g.globalAlpha=1}
+ if(S.sh>0){g.strokeStyle='#9be7ff';g.lineWidth=3;g.beginPath();g.arc(S.x,S.y,26,0,7);g.stroke()}
+ g.restore();
+ const c=CH[S.ch],bo=S.bugs.find(b=>b.t=='boss');
+ T('♥'.repeat(Math.max(0,S.lives)),12,18,'#ff6b81',18,'left');T('Data '+S.score,W-12,18,'#fff',18,'right');
+ T(S.st?(c.ty=='bits'?'Fetch payload '+S.got+'/'+c.need:c.ty=='time'?'Hold the build '+Math.floor(S.t)+'/'+c.need+'s':'Beat the Merge Conflict'):'Arcade '+Math.floor(S.t)+'s',W/2,18,'#c9ccff',16);
+ T(wp.n+(S.wt>0?' '+Math.ceil(S.wt)+'s':''),12,HT-16,'#7ee787',16,'left');
+ if(bo){g.fillStyle='#400';g.fillRect(W/2-120,34,240,8);g.fillStyle='#f55';g.fillRect(W/2-120,34,240*Math.max(0,bo.hp)/B.boss.hp,8)}
+ if(mode=='talk'){const[sp,tx]=S.tk.l[S.tk.i];g.fillStyle='rgba(8,9,22,.9)';g.fillRect(10,HT-142,W-20,132);hero(g,sp,60,HT-76,26,t);T(H[sp].n,104,HT-120,H[sp].c,18,'left');g.font='700 17px Nunito,sans-serif';wrap(tx,W-140).forEach((l,i)=>T(l,104,HT-92+i*22,'#fff',17,'left'));T('Enter or tap to continue',W-24,HT-22,'#8d93c0',14,'right')}
+ if(mode=='over'||mode=='end'){g.fillStyle='rgba(8,9,22,.82)';g.fillRect(0,0,W,HT);const e=mode=='end';T(e?'Merged to main':'Build failed',W/2,HT/2-44,e?'#7ee787':S.h.c,40);T('Score '+S.score+(S.st?'':'   Best '+best(S.k)),W/2,HT/2,'#fff',22);T(e?'Press Enter or tap to play the story again':'Press Enter or tap to try again',W/2,HT/2+44,'#c9ccff',18)}}
+function tick(ts){const d=Math.min(.05,(ts-last)/1000||0);last=ts;const t=ts/1000;
+ if(mode=='play')upd(d);draw(t);
+ for(const[c,k]of pv){c.clearRect(0,0,240,200);hero(c,k,120,100,52,t)}
+ ab.forEach((b,i)=>{b.textContent=!S?'Pick a hero first':S.cd[i]>0?S.h.an[i]+' in '+S.cd[i].toFixed(1)+'s':S.h.an[i]+' is ready'});
+ requestAnimationFrame(tick)}
+requestAnimationFrame(tick);
+const nk=e=>e.key.length==1?e.key.toLowerCase():e.key;
+addEventListener('keydown',e=>{const k=nk(e);keys[k]=1;
+ if((mode=='play'||mode=='talk')&&(k==' '||k.startsWith('Arrow')))e.preventDefault();
+ if(k=='Enter'||(k==' '&&mode!='play'))act();else if(k==' '||k=='e')use(0);else if(k=='q'||k=='Shift')use(1)});
+addEventListener('keyup',e=>{delete keys[nk(e)]});
+addEventListener('blur',()=>{keys={}});
+const pt=e=>{const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*HT/r.height}};
+cv.addEventListener('pointerdown',e=>{if(mode!='play'){act();return}cv.setPointerCapture(e.pointerId);ptr=pt(e)});
+cv.addEventListener('pointermove',e=>{if(ptr)ptr=pt(e)});
+for(const n of['pointerup','pointercancel'])cv.addEventListener(n,()=>{ptr=null});
+ab[0].onclick=()=>use(0);ab[1].onclick=()=>use(1);
+</script>
+</body>
+</html>
